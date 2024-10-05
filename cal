@@ -1,0 +1,136 @@
+"use client"
+
+import { useState } from "react"
+import { Calendar } from "@/components/ui/calendar"
+import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { CheckCircle2, Circle, Trash2 } from "lucide-react"
+
+type Task = {
+  id: number
+  date: Date
+  title: string
+  completed: boolean
+}
+
+export default function CalendarApp() {
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
+  const [tasks, setTasks] = useState<Task[]>([])
+  const [newTaskTitle, setNewTaskTitle] = useState("")
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+
+  const addTask = () => {
+    if (selectedDate && newTaskTitle) {
+      const newTask: Task = {
+        id: Date.now(),
+        date: selectedDate,
+        title: newTaskTitle,
+        completed: false,
+      }
+      setTasks([...tasks, newTask])
+      setNewTaskTitle("")
+      setIsDialogOpen(false)
+    }
+  }
+
+  const toggleTaskCompletion = (taskId: number) => {
+    setTasks(tasks.map(task => 
+      task.id === taskId ? { ...task, completed: !task.completed } : task
+    ))
+  }
+
+  const removeTask = (taskId: number) => {
+    setTasks(tasks.filter(task => task.id !== taskId))
+  }
+
+  const tasksForSelectedDate = tasks.filter(
+    (task) => task.date.toDateString() === selectedDate?.toDateString()
+  )
+
+  return (
+    <div className="max-w-md mx-auto mt-10 p-4">
+      <h1 className="text-2xl font-bold mb-4">Task Calendar</h1>
+      <div className="mb-4">
+        <Calendar
+          mode="single"
+          selected={selectedDate}
+          onSelect={setSelectedDate}
+          className="rounded-md border"
+        />
+      </div>
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogTrigger asChild>
+          <Button className="w-full mb-4">Add Task</Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Task</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="task-title" className="text-right">
+                Task Title
+              </Label>
+              <Input
+                id="task-title"
+                value={newTaskTitle}
+                onChange={(e) => setNewTaskTitle(e.target.value)}
+                className="col-span-3"
+              />
+            </div>
+          </div>
+          <Button onClick={addTask}>Add Task</Button>
+        </DialogContent>
+      </Dialog>
+      <div>
+        <h2 className="text-xl font-semibold mb-2">
+          Tasks for {selectedDate?.toDateString()}
+        </h2>
+        {tasksForSelectedDate.length > 0 ? (
+          <ul className="space-y-2">
+            {tasksForSelectedDate.map((task) => (
+              <li
+                key={task.id}
+                className="flex items-center justify-between bg-gray-100 p-2 rounded-md"
+              >
+                <span className={task.completed ? "line-through text-gray-500" : ""}>
+                  {task.title}
+                </span>
+                <div className="flex items-center space-x-2">
+                  <button 
+                    onClick={() => toggleTaskCompletion(task.id)} 
+                    className="focus:outline-none"
+                    aria-label={task.completed ? "Mark as incomplete" : "Mark as complete"}
+                  >
+                    {task.completed ? (
+                      <CheckCircle2 className="text-green-500" />
+                    ) : (
+                      <Circle className="text-gray-400" />
+                    )}
+                  </button>
+                  <button 
+                    onClick={() => removeTask(task.id)} 
+                    className="focus:outline-none text-red-500 hover:text-red-700"
+                    aria-label="Remove task"
+                  >
+                    <Trash2 size={20} />
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p>No tasks for this day.</p>
+        )}
+      </div>
+    </div>
+  )
+}
